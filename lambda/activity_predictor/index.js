@@ -112,9 +112,9 @@ async function initiateServerStop(instanceId) {
 }
 
 exports.handler = async (event) => {
-    const instanceId = process.env.INSTANCE_ID;
-    
     try {
+        const instanceId = event.instanceId;
+        
         // Get historical player data
         const playerData = await getHistoricalPlayerData(instanceId);
         
@@ -127,17 +127,12 @@ exports.handler = async (event) => {
         return {
             statusCode: 200,
             body: JSON.stringify({
-                peakHours,
-                message: 'Server schedule updated successfully'
+                message: 'Activity prediction complete',
+                peakHours: peakHours
             })
         };
     } catch (error) {
-        console.error('Error in activity prediction:', error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({
-                error: error.message
-            })
-        };
+        console.error('Error:', error);
+        throw error;
     }
 };

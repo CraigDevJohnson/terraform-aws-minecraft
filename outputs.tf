@@ -52,3 +52,23 @@ output "ec2_instance_profile" {
 output "minecraft_server" {
   value = "${module.ec2_minecraft[0].public_ip}:${var.mc_port}"
 }
+
+output "instance_id" {
+  description = "EC2 instance ID"
+  value       = module.ec2_minecraft.id[0]
+}
+
+output "instance_public_ip" {
+  description = "Public IP of the Minecraft server"
+  value       = module.ec2_minecraft.public_ip[0]
+}
+
+output "s3_bucket_name" {
+  description = "Name of the S3 bucket for backups"
+  value       = local.bucket
+}
+
+output "cloudwatch_dashboard_url" {
+  description = "URL to the main CloudWatch dashboard"
+  value       = "https://${data.aws_region.current.name}.console.aws.amazon.com/cloudwatch/home?region=${data.aws_region.current.name}#dashboards:name=${var.name}-monitoring"
+}

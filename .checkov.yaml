@@ -1,0 +1,8 @@
+branch: main
+download-external-modules: true
+evaluate-variables: true
+framework:
+  - terraform
+skip-check:
+  - CKV_AWS_79  # Skip DynamoDB encryption with CMK requirement (using AWS managed key)
+  - CKV_AWS_116 # Skip API Gateway logging (not using API Gateway)

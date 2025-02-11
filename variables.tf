@@ -10,6 +10,12 @@ variable "subnet_id" {
   default     = ""
 }
 
+variable "region" {
+  description = "AWS region where resources will be created"
+  type        = string
+  default     = "us-west-2"
+}
+
 variable "key_name" {
   description = "EC2 key name for provisioning and access"
   type        = string
@@ -36,21 +42,18 @@ variable "bucket_object_versioning" {
 
 // For tags
 variable "name" {
-  description = "Name to use for servers, tags, etc (e.g. minecraft)"
+  description = "Name prefix for resources"
   type        = string
-  default     = "minecraft"
 }
 
 variable "namespace" {
-  description = "Namespace, which could be your organization name or abbreviation, e.g. 'eg' or 'cp'"
+  description = "Namespace for resource naming"
   type        = string
-  default     = "games"
 }
 
 variable "environment" {
-  description = "Environment, e.g. 'prod', 'staging', 'dev', 'pre-prod', 'UAT'"
+  description = "Environment (prod, dev, etc.)"
   type        = string
-  default     = "games"
 }
 
 variable "tags" {
@@ -61,19 +64,19 @@ variable "tags" {
 
 // Minecraft-specific defaults
 variable "mc_port" {
-  description = "UDP port for Minecraft Bedrock"
+  description = "Minecraft server port"
   type        = number
   default     = 19132
 }
 
 variable "mc_root" {
-  description = "Where to install minecraft on your instance"
+  description = "Minecraft server root directory"
   type        = string
-  default     = "/home/minecraft"
+  default     = "/opt/minecraft"
 }
 
 variable "mc_version" {
-  description = "Which version of minecraft to install"
+  description = "Minecraft server version"
   type        = string
   default     = "latest"
 }
@@ -88,6 +91,23 @@ variable "mc_backup_freq" {
   description = "How often (mins) to sync to S3"
   type        = number
   default     = 30  // Changed from 15 to reduce S3 operations
+}
+
+variable "enable_versioning" {
+  description = "Enable S3 bucket versioning"
+  type        = bool
+  default     = true
+}
+
+variable "enable_backup_replication" {
+  description = "Enable backup replication"
+  type        = bool
+  default     = false
+}
+
+variable "backup_replica_bucket_arn" {
+  type        = string
+  description = "ARN of the backup replica bucket for replication"
 }
 
 // You'll want to tune these next two based on the instance type
@@ -124,7 +144,7 @@ variable "instance_type" {
 }
 
 variable "allowed_cidrs" {
-  description = "List of allowed CIDR blocks to access the server"
+  description = "List of CIDRs allowed to connect"
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
@@ -138,43 +158,35 @@ variable "allowed_ip_description" {
 }
 
 variable "server_edition" {
-  description = "Which Minecraft server edition to run (bedrock or java)"
+  description = "Minecraft server edition (java or bedrock)"
   type        = string
   default     = "bedrock"
   validation {
-    condition     = contains(["bedrock", "java"], var.server_edition)
-    error_message = "Server edition must be either 'bedrock' or 'java'."
+    condition     = contains(["java", "bedrock"], var.server_edition)
+    error_message = "Server edition must be either 'java' or 'bedrock'."
   }
 }
 
 variable "enable_auto_shutdown" {
-  description = "Enable automatic shutdown during inactive hours"
+  description = "Enable automatic shutdown when inactive"
   type        = bool
   default     = true
 }
 
 variable "active_hours_start" {
-  description = "Start time for active hours in 24h format (e.g., 8 for 8 AM)"
-  type        = number
-  default     = 8
-  validation {
-    condition     = var.active_hours_start >= 0 && var.active_hours_start <= 23
-    error_message = "Active hours start must be between 0 and 23."
-  }
+  description = "Start of active hours (24h format)"
+  type        = string
+  default     = "09:00"
 }
 
 variable "active_hours_end" {
-  description = "End time for active hours in 24h format (e.g., 22 for 10 PM)"
-  type        = number
-  default     = 22
-  validation {
-    condition     = var.active_hours_end >= 0 && var.active_hours_end <= 23
-    error_message = "Active hours end must be between 0 and 23."
-  }
+  description = "End of active hours (24h format)"
+  type        = string
+  default     = "23:00"
 }
 
 variable "min_players_to_start" {
-  description = "Minimum number of connection attempts to start server outside active hours"
+  description = "Minimum players to start server"
   type        = number
   default     = 1
 }
@@ -198,9 +210,9 @@ variable "notification_email" {
 }
 
 variable "enable_status_page" {
-  description = "Enable server status webpage hosted in S3"
+  description = "Enable public status page"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "metrics_retention_days" {
@@ -342,21 +354,20 @@ variable "auto_apply_updates" {
 }
 
 variable "enable_monitoring" {
-  description = "Enable enhanced monitoring and alerting"
+  description = "Enable enhanced monitoring"
   type        = bool
   default     = true
 }
 
 variable "alert_email" {
-  description = "Email address for server alerts and notifications"
+  description = "Email address for alerts"
   type        = string
-  default     = ""
 }
 
 variable "metric_retention_days" {
-  description = "Number of days to retain detailed metrics"
+  description = "Days to retain CloudWatch metrics"
   type        = number
-  default     = 90
+  default     = 30
 }
 
 variable "monitoring_interval" {
@@ -403,3 +414,29 @@ variable "maintenance_window_duration" {
   default     = 2
 }
 
+locals {
+  vpc_id    = length(var.vpc_id) > 0 ? var.vpc_id : data.aws_vpc.default.id
+  subnet_id = length(var.subnet_id) > 0 ? var.subnet_id : sort(data.aws_subnet_ids.default.ids)[0]
+  
+  bucket = length(var.bucket_name) > 0 ? var.bucket_name : "${module.label.id}-${random_string.s3.result}"
+  
+  cost_tags = {
+    Project     = var.name
+    Environment = var.environment
+    CostCenter  = "Gaming"
+    ServerType  = var.server_edition
+    Managed     = "Terraform"
+  }
+
+  tf_tags = {
+    Terraform   = "true"
+    Environment = var.environment
+    Project     = var.name
+  }
+}
+
+variable "maintenance_schedule" {
+  description = "Cron expression for maintenance window schedule"
+  type        = string
+  default     = "cron(0 0 * * ? *)"  # Default: Run at midnight daily
+}
