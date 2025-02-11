@@ -1,0 +1,9 @@
+Assume you are a senior AWS Cloud Engineer with many years experience in server and serverless hosting options for Minecraft servers.
+
+Review the current terraform deployment, it is in the middle of being updated (5 years old originally). Update it for any possible changes that are needed to still work today. This is to run a Minecraft server in AWS. Please make sure this server is as cheap as possible while being able to run Minecraft Bedrock server for 3-5 players. Make comments are a note in the notes file where cost/performance decisions were made. Add any todo tasks to the todo file. It looks like the main.tf has some problems. Are you able to analyze and resolve the problems?
+
+Review the todo and the notes.md. Then continue to update the deployment.
+
+Finally, add any recommendations or possible improvements to the notes file as well.
+
+Please let me know if you have any questions before proceeding.

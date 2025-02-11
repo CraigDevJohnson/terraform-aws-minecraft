@@ -1,0 +1,118 @@
+TODO Items for Minecraft Server Deployment:
+
+1. ✅ Update AMI source (COMPLETED)
+- ✅ Updated Ubuntu AMI filter to 22.04 LTS
+- ✅ Added Amazon Linux 2023 as default AMI
+- ✅ Added multi-OS support in user_data.sh
+
+2. ✅ Instance Type Updates (COMPLETED)
+- ✅ Changed from t2.medium to t3a.medium for better price/performance
+- ⏳ Consider using Spot instances for non-critical gameplay periods (TODO - future enhancement)
+- ✅ Implemented auto-shutdown during inactive hours with monitor_activity.sh
+
+3. ✅ Storage Optimization (COMPLETED)
+- ✅ Reduced backup frequency from 5 mins to 15 mins by default
+- ✅ Implemented S3 lifecycle rules
+- ✅ Added versioning configuration option
+- ✅ Added final backup on shutdown
+
+4. ✅ Security Updates (COMPLETED)
+- ✅ Updated security group rules for both Java/Bedrock editions
+- ✅ Implemented AWS Systems Manager for secure SSH access
+- ✅ Added granular IP allowlist feature
+- ✅ Added WAF rules for DDoS protection
+- ✅ Added CloudWatch monitoring for security events
+
+5. ✅ Multi-Edition Server Support (COMPLETED)
+- ✅ Added Bedrock server download and installation logic
+- ✅ Updated user_data.sh to handle both editions
+- ✅ Configured proper ports (UDP 19132 for Bedrock, TCP 25565 for Java)
+- ✅ Added server_edition variable with validation
+- ✅ Added edition-specific configuration templates
+
+6. ✅ Monitoring & Cost Management (COMPLETED)
+- ✅ Added auto-shutdown for cost optimization
+- ✅ Added CloudWatch alarms
+- ✅ Added budget alerts and cost allocation tags
+- ✅ Added S3 cost optimization through lifecycle rules
+
+7. ✅ Networking (COMPLETED)
+- ⏳ Consider AWS Game Lift integration (Future Enhancement)
+- ✅ Implemented VPC endpoints for S3 and Systems Manager
+- ✅ Added custom domain support via Route 53
+- ⏳ Implement automatic region selection (Future Enhancement)
+
+8. ✅ Maintenance & Automation (COMPLETED)
+- ✅ Updated module dependencies
+- ✅ Added CloudWatch agent
+- ✅ Added automatic server version updates
+- ✅ Created automated backup system
+- ✅ Implemented graceful shutdown procedure
+
+9. ✅ Quality of Life Improvements (COMPLETED)
+- ✅ Added server status webpage
+- ✅ Added email notifications for updates
+- ✅ Added CloudWatch metrics
+- ✅ Implemented graceful shutdown
+- ✅ Added automatic version updates
+
+10. ✅ Documentation (COMPLETED)
+- ✅ Added cost analysis to NOTES.md
+- ✅ Added auto-shutdown logic documentation
+- ✅ Added security improvements documentation
+- ✅ Added monitoring configuration documentation
+- ✅ Added operational best practices
+
+11. ⏳ Cost Optimization for Small Bedrock Server
+- ✅ Changed instance type to t3a.small
+- ✅ Optimized memory allocation for 3-5 players
+- ⏳ Implement automatic instance hibernation for long inactive periods
+- ⏳ Add CloudWatch alarm actions for auto-stopping server
+- ⏳ Configure backup retention policies
+- ⏳ Implement smart scaling based on player count
+
+12. ⏳ Performance Monitoring Improvements
+- ⏳ Add specific Bedrock server metrics collection
+- ⏳ Create performance baseline measurements
+- ⏳ Setup player latency monitoring
+- ⏳ Configure resource utilization alerts
+
+13. ⏳ Infrastructure Updates
+- ⏳ Migrate to AWS Systems Manager Session Manager for SSH replacement
+- ⏳ Implement EBS volume optimization
+- ⏳ Add automated volume snapshots
+- ⏳ Setup automatic maintenance windows
+
+Future Enhancements to Consider:
+1. Spot Instance Integration
+   - Implement for non-critical periods
+   - Add automatic failover to on-demand
+   - Create spot termination handler
+
+2. AWS GameLift Integration
+   - Evaluate cost/benefit
+   - Design migration path
+   - Plan global deployment strategy
+
+3. Multi-Region Support
+   - Automatic region selection based on player location
+   - Cross-region backup strategy
+   - Global load balancing
+
+4. Enhanced Monitoring
+   - Add player statistics collection
+   - Create detailed performance metrics
+   - Implement predictive scaling
+
+5. Advanced Administration
+   - Create web-based admin panel
+   - Add Discord/Slack integration
+   - Implement player management system
+
+## Recent Changes
+1. Added player analytics and retention metrics
+2. Implemented network performance monitoring
+3. Enhanced server health monitoring with TPS and MSPT metrics
+4. Added automated testing for Lambda functions
+5. Integrated ML-based activity prediction for intelligent auto-shutdown
+6. Improved documentation for new features and best practices
