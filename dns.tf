@@ -23,8 +23,8 @@ resource "aws_route53_health_check" "minecraft" {
   count             = var.create_dns_record ? 1 : 0
   fqdn              = var.domain_name
   port              = var.mc_port
-  type             = "TCP"
-  request_interval = "30"
+  type              = "TCP"
+  request_interval  = "30"
   failure_threshold = "3"
 
   tags = merge(local.cost_tags, {

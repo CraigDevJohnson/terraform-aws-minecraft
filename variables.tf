@@ -58,7 +58,7 @@ variable "environment" {
 
 variable "tags" {
   description = "Any extra tags to assign to objects"
-  type        = map
+  type        = map(any)
   default     = {}
 }
 
@@ -90,7 +90,7 @@ variable "mc_type" {
 variable "mc_backup_freq" {
   description = "How often (mins) to sync to S3"
   type        = number
-  default     = 30  // Changed from 15 to reduce S3 operations
+  default     = 30 // Changed from 15 to reduce S3 operations
 }
 
 variable "enable_versioning" {
@@ -114,13 +114,13 @@ variable "backup_replica_bucket_arn" {
 variable "java_ms_mem" {
   description = "Initial memory for server"
   type        = string
-  default     = "1G"  // Optimized for small player count
+  default     = "1G" // Optimized for small player count
 }
 
 variable "java_mx_mem" {
   description = "Maximum memory for server"
   type        = string
-  default     = "1536M"  // Optimized for 3-5 players
+  default     = "1536M" // Optimized for 3-5 players
 }
 
 // Instance vars
@@ -140,7 +140,7 @@ variable "ami" {
 variable "instance_type" {
   description = "EC2 instance type/size - optimized for 3-5 player Bedrock server"
   type        = string
-  default     = "t3a.small"  // Changed from t3a.medium for cost optimization
+  default     = "t3a.small" // Changed from t3a.medium for cost optimization
 }
 
 variable "allowed_cidrs" {
@@ -152,7 +152,7 @@ variable "allowed_cidrs" {
 variable "allowed_ip_description" {
   description = "Map of CIDR blocks to their descriptions for documentation"
   type        = map(string)
-  default     = {
+  default = {
     "0.0.0.0/0" = "Allow access from anywhere (not recommended for production)"
   }
 }
@@ -296,14 +296,14 @@ variable "waf_rules" {
   type = object({
     rate_limit = object({
       enabled = bool
-      limit   = number  // Requests per 5 minutes
+      limit   = number // Requests per 5 minutes
     })
     protocol_enforcement = object({
-      enabled = bool
-      strict_mode = bool  // Enforce strict Minecraft protocol rules
+      enabled     = bool
+      strict_mode = bool // Enforce strict Minecraft protocol rules
     })
     ip_reputation = object({
-      enabled = bool
+      enabled            = bool
       block_anonymous_ip = bool
     })
   })
@@ -313,11 +313,11 @@ variable "waf_rules" {
       limit   = 2000
     }
     protocol_enforcement = {
-      enabled = true
+      enabled     = true
       strict_mode = false
     }
     ip_reputation = {
-      enabled = true
+      enabled            = true
       block_anonymous_ip = true
     }
   }
@@ -338,7 +338,7 @@ variable "enable_auto_updates" {
 variable "update_check_schedule" {
   description = "How often to check for updates (cron expression)"
   type        = string
-  default     = "cron(0 0 * * ? *)"  // Daily at midnight UTC
+  default     = "cron(0 0 * * ? *)" // Daily at midnight UTC
 }
 
 variable "update_notification_email" {
@@ -379,15 +379,15 @@ variable "monitoring_interval" {
 variable "alert_thresholds" {
   description = "Thresholds for various monitoring alerts"
   type = object({
-    cpu_high = number
-    memory_high = number
-    disk_io_high = number
+    cpu_high                  = number
+    memory_high               = number
+    disk_io_high              = number
     player_inactivity_minutes = number
   })
   default = {
-    cpu_high = 80
-    memory_high = 85
-    disk_io_high = 1000
+    cpu_high                  = 80
+    memory_high               = 85
+    disk_io_high              = 1000
     player_inactivity_minutes = 30
   }
 }
@@ -405,7 +405,7 @@ variable "peak_hours" {
 variable "maintenance_window_schedule" {
   description = "Cron expression for maintenance window"
   type        = string
-  default     = "cron(0 0 ? * MON *)"  // Monday at midnight
+  default     = "cron(0 0 ? * MON *)" // Monday at midnight
 }
 
 variable "maintenance_window_duration" {
@@ -414,12 +414,23 @@ variable "maintenance_window_duration" {
   default     = 2
 }
 
+variable "os_type" {
+  description = "The operating system to use for the Minecraft server. Valid values are: amazon-linux-2, amazon-linux-2023, ubuntu"
+  type        = string
+  default     = "amazon-linux-2023"
+
+  validation {
+    condition     = contains(["amazon-linux-2", "amazon-linux-2023", "ubuntu"], var.os_type)
+    error_message = "Valid values for os_type are: amazon-linux-2, amazon-linux-2023, ubuntu"
+  }
+}
+
 locals {
   vpc_id    = length(var.vpc_id) > 0 ? var.vpc_id : data.aws_vpc.default.id
   subnet_id = length(var.subnet_id) > 0 ? var.subnet_id : sort(data.aws_subnet_ids.default.ids)[0]
-  
+
   bucket = length(var.bucket_name) > 0 ? var.bucket_name : "${module.label.id}-${random_string.s3.result}"
-  
+
   cost_tags = {
     Project     = var.name
     Environment = var.environment
@@ -438,5 +449,5 @@ locals {
 variable "maintenance_schedule" {
   description = "Cron expression for maintenance window schedule"
   type        = string
-  default     = "cron(0 0 * * ? *)"  # Default: Run at midnight daily
+  default     = "cron(0 0 * * ? *)" # Default: Run at midnight daily
 }

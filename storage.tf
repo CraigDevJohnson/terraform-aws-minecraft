@@ -7,19 +7,19 @@ resource "random_string" "s3" {
 
 locals {
   using_existing_bucket = signum(length(var.bucket_name)) == 1
-  bucket = length(var.bucket_name) > 0 ? var.bucket_name : "${module.label.id}-${random_string.s3.result}"
+  bucket                = length(var.bucket_name) > 0 ? var.bucket_name : "${module.label.id}-${random_string.s3.result}"
 }
 
 module "s3" {
   source = "terraform-aws-modules/s3-bucket/aws"
 
   create_bucket = local.using_existing_bucket ? false : true
-  bucket = local.bucket
-  acl    = "private"
+  bucket        = local.bucket
+  acl           = "private"
 
   force_destroy = var.bucket_force_destroy
   versioning = {
-    enabled = var.enable_versioning
+    enabled    = var.enable_versioning
     mfa_delete = false
   }
 
@@ -47,7 +47,7 @@ module "s3" {
       ]
 
       expiration = {
-        days = 365  # Expire old backups after 1 year
+        days = 365 # Expire old backups after 1 year
       }
     }
   ]
@@ -59,7 +59,7 @@ module "s3" {
 resource "aws_s3_bucket" "status_page" {
   count  = var.enable_status_page ? 1 : 0
   bucket = "${var.name}-status-${random_string.s3.result}"
-  
+
   tags = merge(local.cost_tags, {
     Purpose = "Server Status Page"
   })
@@ -150,7 +150,7 @@ resource "aws_s3_bucket_replication_configuration" "backup_replication" {
     }
 
     destination {
-      bucket = var.backup_replica_bucket_arn
+      bucket        = var.backup_replica_bucket_arn
       storage_class = "STANDARD_IA"
     }
   }
@@ -198,11 +198,11 @@ resource "aws_s3_bucket_analytics_configuration" "backup_analytics" {
 # EBS volume for game data
 resource "aws_ebs_volume" "minecraft" {
   availability_zone = module.ec2_minecraft.availability_zone[0]
-  size             = 30
-  type             = "gp3"
-  iops             = 3000
-  throughput       = 125
-  encrypted        = true
+  size              = 30
+  type              = "gp3"
+  iops              = 3000
+  throughput        = 125
+  encrypted         = true
 
   tags = merge(local.cost_tags, {
     Name = "${var.name}-minecraft-data"
@@ -225,7 +225,7 @@ resource "aws_s3_object" "default_peak_hours" {
   bucket = local.bucket
   key    = "config/default_peak_hours.json"
   content = jsonencode({
-    peakHours = var.peak_hours,
+    peakHours   = var.peak_hours,
     lastUpdated = timestamp()
   })
   content_type = "application/json"
@@ -235,17 +235,17 @@ resource "aws_s3_object" "default_peak_hours" {
 resource "aws_dlm_lifecycle_policy" "minecraft" {
   description        = "Minecraft server volume backup policy"
   execution_role_arn = aws_iam_role.dlm_lifecycle_role.arn
-  state             = "ENABLED"
+  state              = "ENABLED"
 
   policy_details {
     resource_types = ["VOLUME"]
-    
+
     schedule {
       name = "Daily snapshots"
       create_rule {
         interval      = 24
         interval_unit = "HOURS"
-        times        = ["23:00"]
+        times         = ["23:00"]
       }
       retain_rule {
         count = 7
@@ -270,7 +270,7 @@ resource "aws_s3_object" "default_peak_hours" {
   bucket = local.bucket
   key    = "config/default_peak_hours.json"
   content = jsonencode({
-    peakHours = var.peak_hours,
+    peakHours   = var.peak_hours,
     lastUpdated = timestamp()
   })
   content_type = "application/json"
@@ -278,11 +278,11 @@ resource "aws_s3_object" "default_peak_hours" {
 
 // DynamoDB table for player statistics
 resource "aws_dynamodb_table" "player_stats" {
-  count          = var.enable_monitoring ? 1 : 0
-  name           = "${var.name}-player-stats"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "playerId"
-  range_key      = "timestamp"
+  count        = var.enable_monitoring ? 1 : 0
+  name         = "${var.name}-player-stats"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "playerId"
+  range_key    = "timestamp"
 
   attribute {
     name = "playerId"

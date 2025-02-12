@@ -1,38 +1,119 @@
-name: Terraform Validation
+name: Terraform Validation and Testing
 
 on:
   push:
-    paths:
-      - '**.tf'
-      - '**.tfvars'
+    branches: [ main, develop ]
   pull_request:
-    paths:
-      - '**.tf'
-      - '**.tfvars'
+    branches: [ main, develop ]
+
+env:
+  AWS_REGION: us-east-1
+  TF_VERSION: 1.5.0
 
 jobs:
   validate:
+    name: Validate Infrastructure
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: hashicorp/setup-terraform@v2
-
-      - name: Terraform Format
-        run: terraform fmt -check -recursive
-
-      - name: Terraform Init
-        run: terraform init -backend=false
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Run tflint
-        uses: terraform-linters/setup-tflint@v3
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
         with:
-          tflint_version: v0.44.1
+          terraform_version: ${{ env.TF_VERSION }}
+      
+      - name: Run Infrastructure Tests
+        run: |
+          chmod +x ./scripts/test-infrastructure.sh
+          ./scripts/test-infrastructure.sh
+      
+      - name: Run Security Validation
+        run: |
+          chmod +x ./scripts/validate-security.sh
+          ./scripts/validate-security.sh
+      
+      - name: Run Monitoring Validation
+        run: |
+          chmod +x ./scripts/validate-monitoring.sh
+          ./scripts/validate-monitoring.sh
+      
+      - name: Run Update Validation
+        run: |
+          chmod +x ./scripts/validate-updates.sh
+          ./scripts/validate-updates.sh
 
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@master
+  test:
+    name: Testing Suite
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          directory: .
-          framework: terraform
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Run Deployment Tests
+        run: |
+          chmod +x ./scripts/test-deployment.sh
+          ./scripts/test-deployment.sh
+      
+      - name: Run Performance Tests
+        run: |
+          chmod +x ./scripts/test-performance.sh
+          ./scripts/test-performance.sh
+      
+      - name: Run Chaos Tests
+        run: |
+          chmod +x ./scripts/test-chaos.sh
+          ./scripts/test-chaos.sh
+      
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-reports
+          path: |
+            test-results.md
+            performance_report.md
+            chaos_report.md
+
+  deploy:
+    name: Deploy Infrastructure
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Initialize Terraform
+        run: terraform init
+      
+      - name: Apply Changes
+        run: terraform apply -auto-approve
+      
+      - name: Validate Deployment
+        run: |
+          chmod +x ./scripts/validate-deployment.sh
+          ./scripts/validate-deployment.sh
+      
+      - name: Run Integration Tests
+        run: |
+          chmod +x ./scripts/run_all_tests.sh
+          ./scripts/run_all_tests.sh

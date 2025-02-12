@@ -53,11 +53,11 @@ resource "aws_cloudwatch_metric_alarm" "cpu_credits" {
   evaluation_periods  = "2"
   metric_name         = "CPUCreditBalance"
   namespace           = "AWS/EC2"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "20"
-  alarm_description  = "CPU credit balance is too low"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "20"
+  alarm_description   = "CPU credit balance is too low"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   dimensions = {
     InstanceId = module.ec2_minecraft.id[0]
@@ -72,11 +72,11 @@ resource "aws_cloudwatch_metric_alarm" "memory_usage" {
   evaluation_periods  = "2"
   metric_name         = "mem_used_percent"
   namespace           = "CWAgent"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "85"
-  alarm_description  = "Memory usage is too high"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "85"
+  alarm_description   = "Memory usage is too high"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   dimensions = {
     InstanceId = module.ec2_minecraft.id[0]
@@ -91,11 +91,11 @@ resource "aws_cloudwatch_metric_alarm" "network_out" {
   evaluation_periods  = "2"
   metric_name         = "NetworkOut"
   namespace           = "AWS/EC2"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "5000000" # 5 MB/s
-  alarm_description  = "Network traffic spike detected"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "5000000" # 5 MB/s
+  alarm_description   = "Network traffic spike detected"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   dimensions = {
     InstanceId = module.ec2_minecraft.id[0]
@@ -185,9 +185,9 @@ resource "aws_cloudwatch_dashboard" "minecraft_metrics" {
           title   = "Server Performance"
           period  = 60
           yAxis = {
-            left: {
-              min: 0,
-              max: 20
+            left : {
+              min : 0,
+              max : 20
             }
           }
         }
@@ -203,11 +203,11 @@ resource "aws_cloudwatch_metric_alarm" "high_cpu" {
   evaluation_periods  = "2"
   metric_name         = "CPUUsage"
   namespace           = "MinecraftServer"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "80"
-  alarm_description  = "CPU usage exceeded 80%"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "80"
+  alarm_description   = "CPU usage exceeded 80%"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   dimensions = {
     InstanceId = module.ec2_minecraft.id[0]
@@ -220,11 +220,11 @@ resource "aws_cloudwatch_metric_alarm" "high_memory" {
   evaluation_periods  = "2"
   metric_name         = "MemoryUsage"
   namespace           = "MinecraftServer"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "85"
-  alarm_description  = "Memory usage exceeded 85%"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "85"
+  alarm_description   = "Memory usage exceeded 85%"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   dimensions = {
     InstanceId = module.ec2_minecraft.id[0]
@@ -237,11 +237,11 @@ resource "aws_cloudwatch_metric_alarm" "no_players" {
   evaluation_periods  = "6"
   metric_name         = "PlayerCount"
   namespace           = "MinecraftServer"
-  period             = "300"
-  statistic          = "Maximum"
-  threshold          = "1"
-  alarm_description  = "No players connected for 30 minutes"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Maximum"
+  threshold           = "1"
+  alarm_description   = "No players connected for 30 minutes"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   dimensions = {
     InstanceId = module.ec2_minecraft.id[0]
@@ -268,7 +268,7 @@ resource "aws_cloudwatch_event_rule" "activity_prediction" {
   count               = var.enable_monitoring ? 1 : 0
   name                = "${var.name}-activity-prediction"
   description         = "Trigger activity prediction analysis"
-  schedule_expression = "cron(0 0 * * ? *)"  // Run daily at midnight UTC
+  schedule_expression = "cron(0 0 * * ? *)" // Run daily at midnight UTC
 
   tags = local.cost_tags
 }
@@ -277,7 +277,7 @@ resource "aws_cloudwatch_event_rule" "activity_prediction" {
 resource "aws_s3_bucket" "status_page" {
   count  = var.enable_status_page ? 1 : 0
   bucket = "${var.name}-status-${random_string.s3.result}"
-  
+
   tags = merge(local.cost_tags, {
     Purpose = "Server Status Page"
   })
@@ -325,13 +325,13 @@ resource "aws_cloudwatch_metric_alarm" "cpu_credits" {
   alarm_name          = "${module.label.id}-cpu-credits-low"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = "2"
-  metric_name        = "CPUCreditBalance"
-  namespace          = "AWS/EC2"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "20"
-  alarm_description  = "CPU credit balance is too low"
-  alarm_actions      = []  // Add SNS topic ARN here if needed
+  metric_name         = "CPUCreditBalance"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "20"
+  alarm_description   = "CPU credit balance is too low"
+  alarm_actions       = [] // Add SNS topic ARN here if needed
 
   dimensions = {
     InstanceId = module.ec2_minecraft.id[0]
@@ -344,13 +344,13 @@ resource "aws_cloudwatch_metric_alarm" "memory_usage" {
   alarm_name          = "${module.label.id}-memory-high"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
-  metric_name        = "mem_used_percent"
-  namespace          = "CWAgent"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "85"
-  alarm_description  = "Memory usage is too high"
-  alarm_actions      = []  // Add SNS topic ARN here if needed
+  metric_name         = "mem_used_percent"
+  namespace           = "CWAgent"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "85"
+  alarm_description   = "Memory usage is too high"
+  alarm_actions       = [] // Add SNS topic ARN here if needed
 
   dimensions = {
     InstanceId = module.ec2_minecraft.id[0]
@@ -363,13 +363,13 @@ resource "aws_cloudwatch_metric_alarm" "network_out" {
   alarm_name          = "${module.label.id}-network-spike"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
-  metric_name        = "NetworkOut"
-  namespace          = "AWS/EC2"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "5000000" // 5 MB/s
-  alarm_description  = "Network traffic spike detected"
-  alarm_actions      = []  // Add SNS topic ARN here if needed
+  metric_name         = "NetworkOut"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "5000000" // 5 MB/s
+  alarm_description   = "Network traffic spike detected"
+  alarm_actions       = [] // Add SNS topic ARN here if needed
 
   dimensions = {
     InstanceId = module.ec2_minecraft.id[0]

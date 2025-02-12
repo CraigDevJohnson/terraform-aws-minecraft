@@ -38,15 +38,15 @@ resource "aws_wafv2_web_acl" "minecraft" {
 
     visibility_config {
       cloudwatch_metrics_enabled = true
-      metric_name               = "${var.name}-rate-limit"
-      sampled_requests_enabled  = true
+      metric_name                = "${var.name}-rate-limit"
+      sampled_requests_enabled   = true
     }
   }
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name               = "${var.name}-waf-overall"
-    sampled_requests_enabled  = true
+    metric_name                = "${var.name}-waf-overall"
+    sampled_requests_enabled   = true
   }
 
   tags = merge(local.cost_tags, {
@@ -60,15 +60,15 @@ resource "aws_lambda_function" "waf_monitor" {
   count         = var.enable_waf ? 1 : 0
   filename      = "${path.module}/lambda/waf_monitor.zip"
   function_name = "${var.name}-waf-monitor"
-  role         = aws_iam_role.waf_monitor[0].arn
-  handler      = "index.handler"
-  runtime      = "nodejs18.x"
-  timeout      = 60
+  role          = aws_iam_role.waf_monitor[0].arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 60
 
   environment {
     variables = {
-      IP_SET_ID = aws_wafv2_ip_set.minecraft[0].id
-      IP_SET_SCOPE = "REGIONAL"
+      IP_SET_ID             = aws_wafv2_ip_set.minecraft[0].id
+      IP_SET_SCOPE          = "REGIONAL"
       BLOCK_COUNT_THRESHOLD = var.waf_block_count_threshold
     }
   }
@@ -94,7 +94,7 @@ resource "aws_cloudwatch_event_target" "waf_monitor" {
 
   input = jsonencode({
     detail = {
-      webAclId = aws_wafv2_web_acl.minecraft[0].id
+      webAclId   = aws_wafv2_web_acl.minecraft[0].id
       webAclName = aws_wafv2_web_acl.minecraft[0].name
     }
   })

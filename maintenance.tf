@@ -1,18 +1,18 @@
 # Maintenance window configuration
 resource "aws_ssm_maintenance_window" "minecraft" {
   name              = "${var.name}-maintenance-window"
-  schedule          = "cron(0 0 ? * MON *)"  // Every Monday at midnight
+  schedule          = "cron(0 0 ? * MON *)" // Every Monday at midnight
   duration          = "2"
   cutoff            = "1"
   schedule_timezone = "UTC"
-  
+
   tags = local.cost_tags
 }
 
 resource "aws_ssm_maintenance_window_target" "minecraft" {
   window_id = aws_ssm_maintenance_window.minecraft.id
   name      = "minecraft-server-maintenance"
-  
+
   targets {
     key    = "InstanceIds"
     values = [module.ec2_minecraft.id[0]]
@@ -36,7 +36,7 @@ resource "aws_ssm_maintenance_window_task" "minecraft_maintenance" {
   task_invocation_parameters {
     run_command_parameters {
       parameter {
-        name   = "commands"
+        name = "commands"
         values = [
           "#!/bin/bash",
           "echo 'Starting maintenance window tasks'",
@@ -84,7 +84,7 @@ resource "aws_ssm_maintenance_window_task" "minecraft_maintenance_cleanup" {
   task_invocation_parameters {
     run_command_parameters {
       parameter {
-        name   = "commands"
+        name = "commands"
         values = [
           "#!/bin/bash",
           "if ! systemctl is-active --quiet minecraft; then",
@@ -112,11 +112,11 @@ resource "aws_cloudwatch_metric_alarm" "maintenance_failure" {
   evaluation_periods  = "1"
   metric_name         = "MaintenanceWindowExecutionStatusFailure"
   namespace           = "AWS/SSM"
-  period             = "300"
-  statistic          = "Sum"
-  threshold          = "0"
-  alarm_description  = "Maintenance window task execution failed"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "0"
+  alarm_description   = "Maintenance window task execution failed"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   dimensions = {
     MaintenanceWindowId = aws_ssm_maintenance_window.minecraft.id

@@ -1,3 +1,32 @@
+## Add any logic/reasoning to this file including cost/performance decisions or just notes relevant to explaining components
+## Last Copilot Prompt:
+Please review and validate #file:ami.tf. Make sure nothing is duplicated as well as ensure it is following standards and isn't missing anything. Remove anything that might be leftover from during the code-split and ensure relevant comments are in place.
+## General Instructions
+
+1. Always format your Terraform code:
+    ```bash
+    terraform fmt
+    ```
+
+2. Validate your configurations before applying:
+    ```bash
+    terraform validate
+    ```
+
+3. Use consistent naming conventions:
+    - Resources: `<provider>_<resource_type>_<description>`
+    - Variables: `<category>_<description>`
+    - Output: `<resource_type>_<description>`
+
+## Pre-Commit Checklist
+
+- [ ] Code is formatted
+- [ ] All variables are described
+- [ ] Required providers are specified
+- [ ] Resources are properly tagged
+- [ ] Outputs are defined
+- [ ] Documentation is updated
+
 # Minecraft Bedrock Server Cost & Performance Notes
 
 ## Updated Infrastructure Decisions
@@ -140,6 +169,8 @@ If the server grows beyond 5 players:
 2. Scale storage IOPS
 3. Adjust memory allocation
 4. Update monitoring thresholds
+
+
 
 ## New Recommendations
 

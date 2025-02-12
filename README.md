@@ -163,6 +163,90 @@ module "minecraft" {
 |vpc_id|VPC ID for instance|
 |zzz\_ec2\_ssh|SSH command to connect to instance|
 
+## Server Setup and Configuration
+
+### User Data Script Features
+
+#### Core Features
+- Multi-OS support (Amazon Linux 2/2023 and Ubuntu)
+- OS-specific package installation and optimization
+- Automatic Java installation for Java edition servers
+- Instance type-based performance tuning
+
+#### Monitoring & Metrics
+- CloudWatch integration
+- TPS (Ticks Per Second) monitoring
+- Player count tracking
+- CPU credit monitoring for t3/t3a instances
+- Memory usage tracking
+- Disk usage monitoring
+- S3-based status reporting
+
+#### Backup System
+- Automated differential backups
+- Backup integrity validation
+- Crash dump archiving
+- Emergency backup on shutdown
+
+#### Security
+- SSH hardening
+- fail2ban integration
+- Host-based firewall (nftables/iptables)
+- Secure file permissions
+- Minimal service exposure
+
+#### Recovery & Health
+- Memory issue recovery
+- Crash recovery
+- Health check endpoint
+- Automatic server restarts
+- Performance monitoring
+- Resource usage tracking
+
+#### Service Management
+- Systemd service configurations
+- Graceful shutdown handling
+- Automatic startup
+- Service dependencies
+
+### Usage
+
+The user data script is automatically executed when the EC2 instance launches. It will:
+1. Detect and configure the OS
+2. Install required packages
+3. Setup the Minecraft server (Bedrock or Java)
+4. Configure monitoring and backups
+5. Apply security hardening
+6. Start all required services
+
+No manual intervention is needed after launch.
+
+### Monitoring Dashboard
+
+The script sets up comprehensive monitoring viewable in CloudWatch under the "Minecraft" namespace, including:
+- Server performance metrics
+- Player activity
+- Resource utilization
+- Backup status
+- Security events
+
+### Recovery Procedures
+
+The script includes automatic recovery for common issues:
+- Memory pressure
+- Server crashes
+- Resource exhaustion
+- Network issues
+
+### Security Measures
+
+Security features include:
+- SSH hardening with fail2ban
+- Host-based firewall
+- Secure file permissions
+- Minimal attack surface
+- Regular security reporting
+
 ## Authors
 
 [Darrell Davis](https://github.com/darrelldavis)

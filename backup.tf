@@ -1,12 +1,12 @@
 # Backup validation Lambda
 resource "aws_lambda_function" "backup_validator" {
-  filename         = "${path.module}/lambda/backup_validator.zip"
-  function_name    = "${var.name}-backup-validator"
-  role            = aws_iam_role.backup_validator.arn
-  handler         = "index.handler"
-  runtime         = "nodejs18.x"
-  timeout         = 60
-  memory_size     = 128
+  filename      = "${path.module}/lambda/backup_validator.zip"
+  function_name = "${var.name}-backup-validator"
+  role          = aws_iam_role.backup_validator.arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 60
+  memory_size   = 128
 
   environment {
     variables = {
@@ -20,13 +20,13 @@ resource "aws_lambda_function" "backup_validator" {
 
 # Add backup restore testing function
 resource "aws_lambda_function" "backup_restore_test" {
-  filename         = "${path.module}/lambda/backup_validator.zip"
-  function_name    = "${var.name}-backup-restore-test"
-  role            = aws_iam_role.backup_validator.arn
-  handler         = "restore_test.handler"
-  runtime         = "nodejs18.x"
-  timeout         = 300
-  memory_size     = 256
+  filename      = "${path.module}/lambda/backup_validator.zip"
+  function_name = "${var.name}-backup-restore-test"
+  role          = aws_iam_role.backup_validator.arn
+  handler       = "restore_test.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 300
+  memory_size   = 256
 
   environment {
     variables = {
@@ -84,7 +84,7 @@ resource "aws_iam_role_policy" "backup_validator" {
         Resource = "*"
         Condition = {
           StringEquals = {
-            "cloudwatch:namespace": "MinecraftServer/Backups"
+            "cloudwatch:namespace" : "MinecraftServer/Backups"
           }
         }
       },
@@ -106,7 +106,7 @@ resource "aws_cloudwatch_event_rule" "backup_validation" {
   name                = "${var.name}-backup-validation"
   description         = "Trigger backup validation checks"
   schedule_expression = "rate(1 hour)"
-  
+
   tags = local.cost_tags
 }
 
@@ -129,7 +129,7 @@ resource "aws_cloudwatch_event_rule" "backup_restore_test" {
   name                = "${var.name}-backup-restore-test"
   description         = "Weekly backup restore testing"
   schedule_expression = "rate(7 days)"
-  
+
   tags = local.cost_tags
 }
 
@@ -146,11 +146,11 @@ resource "aws_cloudwatch_metric_alarm" "backup_age" {
   evaluation_periods  = "1"
   metric_name         = "BackupAge"
   namespace           = "MinecraftServer/Backups"
-  period             = "3600"
-  statistic          = "Maximum"
-  threshold          = "86400000" # 24 hours in milliseconds
-  alarm_description  = "Backup is more than 24 hours old"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "3600"
+  statistic           = "Maximum"
+  threshold           = "86400000" # 24 hours in milliseconds
+  alarm_description   = "Backup is more than 24 hours old"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   tags = local.cost_tags
 }
@@ -161,11 +161,11 @@ resource "aws_cloudwatch_metric_alarm" "backup_size" {
   evaluation_periods  = "1"
   metric_name         = "BackupSize"
   namespace           = "MinecraftServer/Backups"
-  period             = "3600"
-  statistic          = "Minimum"
-  threshold          = "1048576" # 1MB minimum size
-  alarm_description  = "Backup size is suspiciously small"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "3600"
+  statistic           = "Minimum"
+  threshold           = "1048576" # 1MB minimum size
+  alarm_description   = "Backup size is suspiciously small"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   tags = local.cost_tags
 }

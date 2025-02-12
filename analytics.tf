@@ -1,10 +1,10 @@
 # DynamoDB table for player statistics
 resource "aws_dynamodb_table" "player_stats" {
-  count          = var.enable_monitoring ? 1 : 0
-  name           = "${var.name}-player-stats"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "playerId"
-  range_key      = "timestamp"
+  count        = var.enable_monitoring ? 1 : 0
+  name         = "${var.name}-player-stats"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "playerId"
+  range_key    = "timestamp"
 
   attribute {
     name = "playerId"
@@ -31,11 +31,11 @@ resource "aws_lambda_function" "player_analytics" {
   count         = var.enable_monitoring ? 1 : 0
   filename      = "${path.module}/lambda/player_analytics.zip"
   function_name = "${var.name}-player-analytics"
-  role         = aws_iam_role.player_analytics[0].arn
-  handler      = "index.handler"
-  runtime      = "nodejs18.x"
-  timeout      = 60
-  memory_size  = 256
+  role          = aws_iam_role.player_analytics[0].arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 60
+  memory_size   = 256
 
   environment {
     variables = {
@@ -153,7 +153,7 @@ resource "aws_cloudwatch_event_rule" "activity_prediction" {
   count               = var.enable_monitoring ? 1 : 0
   name                = "${var.name}-activity-prediction"
   description         = "Trigger activity prediction analysis"
-  schedule_expression = "cron(0 0 * * ? *)"  # Daily at midnight UTC
+  schedule_expression = "cron(0 0 * * ? *)" # Daily at midnight UTC
 
   tags = local.cost_tags
 }
@@ -173,16 +173,16 @@ resource "aws_lambda_function" "activity_predictor" {
   count         = var.enable_monitoring ? 1 : 0
   filename      = "${path.module}/lambda/activity_predictor.zip"
   function_name = "${var.name}-activity-predictor"
-  role         = aws_iam_role.activity_predictor[0].arn
-  handler      = "index.handler"
-  runtime      = "nodejs18.x"
-  timeout      = 300
-  memory_size  = 256
+  role          = aws_iam_role.activity_predictor[0].arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 300
+  memory_size   = 256
 
   environment {
     variables = {
-      INSTANCE_ID = module.ec2_minecraft.id[0]
-      RETENTION_DAYS = var.metric_retention_days
+      INSTANCE_ID          = module.ec2_minecraft.id[0]
+      RETENTION_DAYS       = var.metric_retention_days
       MIN_PLAYER_THRESHOLD = "1"
     }
   }
@@ -196,7 +196,7 @@ resource "aws_s3_object" "default_peak_hours" {
   bucket = local.bucket
   key    = "config/default_peak_hours.json"
   content = jsonencode({
-    peakHours = var.peak_hours,
+    peakHours   = var.peak_hours,
     lastUpdated = timestamp()
   })
   content_type = "application/json"

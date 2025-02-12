@@ -66,7 +66,7 @@ resource "aws_iam_role_policy" "lambda_ec2_policy" {
         Resource = "*",
         Condition = {
           StringEquals = {
-            "cloudwatch:namespace": "MinecraftServer"
+            "cloudwatch:namespace" : "MinecraftServer"
           }
         }
       }
@@ -76,18 +76,18 @@ resource "aws_iam_role_policy" "lambda_ec2_policy" {
 
 # Activity predictor Lambda
 resource "aws_lambda_function" "activity_predictor" {
-  filename         = "${path.module}/lambda/activity_predictor.zip"
-  function_name    = "${var.name}-activity-predictor"
-  role            = aws_iam_role.lambda_monitoring.arn
-  handler         = "index.handler"
-  runtime         = "nodejs18.x"
-  timeout         = 300
-  memory_size     = 256
+  filename      = "${path.module}/lambda/activity_predictor.zip"
+  function_name = "${var.name}-activity-predictor"
+  role          = aws_iam_role.lambda_monitoring.arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 300
+  memory_size   = 256
 
   environment {
     variables = {
-      INSTANCE_ID = module.ec2_minecraft.id[0]
-      RETENTION_DAYS = var.metric_retention_days
+      INSTANCE_ID          = module.ec2_minecraft.id[0]
+      RETENTION_DAYS       = var.metric_retention_days
       MIN_PLAYER_THRESHOLD = "1"
     }
   }
@@ -100,10 +100,10 @@ resource "aws_lambda_function" "status_updater" {
   count         = var.enable_status_page ? 1 : 0
   filename      = "${path.module}/lambda/status_updater.zip"
   function_name = "${var.name}-status-updater"
-  role         = aws_iam_role.lambda_status_updater[0].arn
-  handler      = "index.handler"
-  runtime      = "nodejs18.x"
-  timeout      = 30
+  role          = aws_iam_role.lambda_status_updater[0].arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 30
 
   environment {
     variables = {
@@ -140,17 +140,17 @@ resource "aws_lambda_function" "version_checker" {
   count         = var.enable_auto_updates ? 1 : 0
   filename      = "${path.module}/lambda/version_checker.zip"
   function_name = "${var.name}-version-checker"
-  role         = aws_iam_role.lambda_monitoring.arn
-  handler      = "index.handler"
-  runtime      = "nodejs18.x"
-  timeout      = 60
+  role          = aws_iam_role.lambda_monitoring.arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 60
 
   environment {
     variables = {
-      INSTANCE_ID = module.ec2_minecraft.id[0]
+      INSTANCE_ID    = module.ec2_minecraft.id[0]
       SERVER_EDITION = var.server_edition
-      AUTO_UPDATE = tostring(var.auto_apply_updates)
-      SNS_TOPIC_ARN = aws_sns_topic.minecraft_updates[0].arn
+      AUTO_UPDATE    = tostring(var.auto_apply_updates)
+      SNS_TOPIC_ARN  = aws_sns_topic.minecraft_updates[0].arn
     }
   }
 

@@ -2,7 +2,7 @@
 resource "aws_s3_bucket" "status_page" {
   count  = var.enable_status_page ? 1 : 0
   bucket = "${var.name}-status-${random_string.s3.result}"
-  
+
   tags = merge(local.cost_tags, {
     Purpose = "Server Status Page"
   })
@@ -50,10 +50,10 @@ resource "aws_lambda_function" "status_updater" {
   count         = var.enable_status_page ? 1 : 0
   filename      = "${path.module}/lambda/status_updater.zip"
   function_name = "${var.name}-status-updater"
-  role         = aws_iam_role.status_updater[0].arn
-  handler      = "index.handler"
-  runtime      = "nodejs18.x"
-  timeout      = 30
+  role          = aws_iam_role.status_updater[0].arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 30
 
   environment {
     variables = {

@@ -17,19 +17,19 @@ resource "aws_lambda_function" "version_checker" {
   count         = var.enable_auto_updates ? 1 : 0
   filename      = "${path.module}/lambda/version_checker.zip"
   function_name = "${var.name}-version-checker"
-  role         = aws_iam_role.version_checker[0].arn
-  handler      = "index.handler"
-  runtime      = "nodejs18.x"
-  timeout      = 60
+  role          = aws_iam_role.version_checker[0].arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 60
 
   environment {
     variables = {
-      INSTANCE_ID = module.ec2_minecraft.id[0]
-      SERVER_EDITION = var.server_edition
-      AUTO_UPDATE = tostring(var.auto_apply_updates)
+      INSTANCE_ID        = module.ec2_minecraft.id[0]
+      SERVER_EDITION     = var.server_edition
+      AUTO_UPDATE        = tostring(var.auto_apply_updates)
       NOTIFICATION_EMAIL = var.update_notification_email
-      BUCKET_NAME = local.bucket
-      SNS_TOPIC_ARN = aws_sns_topic.minecraft_updates[0].arn
+      BUCKET_NAME        = local.bucket
+      SNS_TOPIC_ARN      = aws_sns_topic.minecraft_updates[0].arn
     }
   }
 

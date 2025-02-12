@@ -1,4 +1,4 @@
-# Network Data Sources
+// Default network configuration
 data "aws_vpc" "default" {
   default = true
 }
@@ -7,7 +7,6 @@ data "aws_subnet_ids" "default" {
   vpc_id = local.vpc_id
 }
 
-# Network Locals
 locals {
   vpc_id    = length(var.vpc_id) > 0 ? var.vpc_id : data.aws_vpc.default.id
   subnet_id = length(var.subnet_id) > 0 ? var.subnet_id : sort(data.aws_subnet_ids.default.ids)[0]
@@ -20,9 +19,9 @@ resource "aws_vpc_endpoint" "ssm" {
   service_name      = "com.amazonaws.${data.aws_region.current.name}.ssm"
   vpc_endpoint_type = "Interface"
 
-  security_group_ids = [aws_security_group.vpc_endpoint.id]
+  security_group_ids  = [aws_security_group.vpc_endpoint.id]
   private_dns_enabled = true
-  tags               = module.label.tags
+  tags                = module.label.tags
 }
 
 resource "aws_vpc_endpoint" "ssmmessages" {
@@ -31,9 +30,9 @@ resource "aws_vpc_endpoint" "ssmmessages" {
   service_name      = "com.amazonaws.${data.aws_region.current.name}.ssmmessages"
   vpc_endpoint_type = "Interface"
 
-  security_group_ids = [aws_security_group.vpc_endpoint.id]
+  security_group_ids  = [aws_security_group.vpc_endpoint.id]
   private_dns_enabled = true
-  tags               = module.label.tags
+  tags                = module.label.tags
 }
 
 resource "aws_vpc_endpoint" "ec2messages" {
@@ -42,9 +41,9 @@ resource "aws_vpc_endpoint" "ec2messages" {
   service_name      = "com.amazonaws.${data.aws_region.current.name}.ec2messages"
   vpc_endpoint_type = "Interface"
 
-  security_group_ids = [aws_security_group.vpc_endpoint.id]
+  security_group_ids  = [aws_security_group.vpc_endpoint.id]
   private_dns_enabled = true
-  tags               = module.label.tags
+  tags                = module.label.tags
 }
 
 // Security group for VPC endpoints
@@ -83,7 +82,7 @@ module "ec2_security_group" {
   vpc_id      = local.vpc_id
 
   ingress_rules = []
-  
+
   ingress_with_cidr_blocks = [
     {
       from_port   = var.mc_port
@@ -98,7 +97,7 @@ module "ec2_security_group" {
 
   tags = merge(module.label.tags, {
     ServerEdition = var.server_edition
-    ManagedBy = "terraform"
+    ManagedBy     = "terraform"
   })
 }
 
@@ -110,7 +109,7 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_endpoint_type = "Gateway"
 
   route_table_ids = data.aws_vpc.default.main_route_table_id
-  
+
   tags = merge(module.label.tags, {
     Name = "${var.name}-s3-endpoint"
   })
@@ -121,8 +120,8 @@ resource "aws_route53_health_check" "server" {
   count             = var.create_dns_record ? 1 : 0
   fqdn              = var.domain_name
   port              = var.mc_port
-  type             = "TCP"
-  request_interval = "30"
+  type              = "TCP"
+  request_interval  = "30"
   failure_threshold = "3"
 
   tags = merge(local.cost_tags, {
@@ -132,12 +131,12 @@ resource "aws_route53_health_check" "server" {
 
 // Flow logs for network monitoring
 resource "aws_flow_log" "minecraft" {
-  count                = var.enable_monitoring ? 1 : 0
-  iam_role_arn        = aws_iam_role.flow_logs[0].arn
-  log_destination     = aws_cloudwatch_log_group.flow_logs[0].arn
-  traffic_type        = "ALL"
-  vpc_id              = local.vpc_id
-  log_format         = "$${version} $${account-id} $${interface-id} $${srcaddr} $${dstaddr} $${srcport} $${dstport} $${protocol} $${packets} $${bytes} $${start} $${end} $${action} $${log-status}"
+  count           = var.enable_monitoring ? 1 : 0
+  iam_role_arn    = aws_iam_role.flow_logs[0].arn
+  log_destination = aws_cloudwatch_log_group.flow_logs[0].arn
+  traffic_type    = "ALL"
+  vpc_id          = local.vpc_id
+  log_format      = "$${version} $${account-id} $${interface-id} $${srcaddr} $${dstaddr} $${srcport} $${dstport} $${protocol} $${packets} $${bytes} $${start} $${end} $${action} $${log-status}"
 
   tags = merge(local.cost_tags, {
     Name = "${var.name}-flow-logs"

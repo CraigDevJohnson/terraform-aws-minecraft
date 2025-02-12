@@ -1,7 +1,7 @@
 // EC2 instance role
 resource "aws_iam_role" "allow_s3" {
   name = "${var.name}-allow-ec2-to-s3"
-  
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -24,7 +24,7 @@ resource "aws_iam_instance_profile" "mc" {
 resource "aws_iam_role_policy" "mc_allow_ec2_to_s3" {
   name = "${var.name}-allow-ec2-to-s3"
   role = aws_iam_role.allow_s3.id
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -37,7 +37,7 @@ resource "aws_iam_role_policy" "mc_allow_ec2_to_s3" {
         Resource = [module.s3.s3_bucket_arn]
         Condition = {
           StringEquals = {
-            "aws:ResourceAccount": data.aws_caller_identity.aws.account_id
+            "aws:ResourceAccount" : data.aws_caller_identity.aws.account_id
           }
         }
       },
@@ -51,7 +51,7 @@ resource "aws_iam_role_policy" "mc_allow_ec2_to_s3" {
         Resource = ["${module.s3.s3_bucket_arn}/*"]
         Condition = {
           StringEquals = {
-            "aws:ResourceAccount": data.aws_caller_identity.aws.account_id
+            "aws:ResourceAccount" : data.aws_caller_identity.aws.account_id
           }
         }
       }
@@ -273,7 +273,7 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_agent" {
 
 // IAM role for S3 access
 resource "aws_iam_role" "allow_s3" {
-  name   = "${module.label.id}-allow-ec2-to-s3"
+  name = "${module.label.id}-allow-ec2-to-s3"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -294,8 +294,8 @@ resource "aws_iam_instance_profile" "mc" {
 }
 
 resource "aws_iam_role_policy" "mc_allow_ec2_to_s3" {
-  name   = "${module.label.id}-allow-ec2-to-s3"
-  role   = aws_iam_role.allow_s3.id
+  name = "${module.label.id}-allow-ec2-to-s3"
+  role = aws_iam_role.allow_s3.id
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -308,7 +308,7 @@ resource "aws_iam_role_policy" "mc_allow_ec2_to_s3" {
         Resource = [module.s3.s3_bucket_arn],
         Condition = {
           StringEquals = {
-            "aws:ResourceAccount": data.aws_caller_identity.aws.account_id
+            "aws:ResourceAccount" : data.aws_caller_identity.aws.account_id
           }
         }
       },
@@ -322,7 +322,7 @@ resource "aws_iam_role_policy" "mc_allow_ec2_to_s3" {
         Resource = ["${module.s3.s3_bucket_arn}/*"],
         Condition = {
           StringEquals = {
-            "aws:ResourceAccount": data.aws_caller_identity.aws.account_id
+            "aws:ResourceAccount" : data.aws_caller_identity.aws.account_id
           }
         }
       }

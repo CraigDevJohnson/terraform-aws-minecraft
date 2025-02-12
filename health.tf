@@ -3,11 +3,11 @@ resource "aws_lambda_function" "server_health" {
   count         = var.enable_monitoring ? 1 : 0
   filename      = "${path.module}/lambda/server_health.zip"
   function_name = "${var.name}-server-health"
-  role         = aws_iam_role.server_health[0].arn
-  handler      = "index.handler"
-  runtime      = "nodejs18.x"
-  timeout      = 60
-  memory_size  = 256
+  role          = aws_iam_role.server_health[0].arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+  timeout       = 60
+  memory_size   = 256
 
   environment {
     variables = {
@@ -101,14 +101,14 @@ resource "aws_cloudwatch_dashboard" "server_health" {
             ["MinecraftServer/Performance", "TPS", "InstanceId", module.ec2_minecraft.id[0]],
             [".", "MSPT", ".", "."]
           ]
-          view    = "timeSeries"
-          region  = data.aws_region.current.name
-          title   = "Server Performance"
-          period  = 60
-          yAxis   = {
-            left: {
-              min: 0,
-              max: 20
+          view   = "timeSeries"
+          region = data.aws_region.current.name
+          title  = "Server Performance"
+          period = 60
+          yAxis = {
+            left : {
+              min : 0,
+              max : 20
             }
           }
         }
@@ -124,14 +124,14 @@ resource "aws_cloudwatch_dashboard" "server_health" {
             ["MinecraftServer", "CPUUsage", "InstanceId", module.ec2_minecraft.id[0]],
             [".", "MemoryUsage", ".", "."]
           ]
-          view    = "timeSeries"
-          region  = data.aws_region.current.name
-          title   = "Resource Usage"
-          period  = 60
-          yAxis   = {
-            left: {
-              min: 0,
-              max: 100
+          view   = "timeSeries"
+          region = data.aws_region.current.name
+          title  = "Resource Usage"
+          period = 60
+          yAxis = {
+            left : {
+              min : 0,
+              max : 100
             }
           }
         }
@@ -148,11 +148,11 @@ resource "aws_cloudwatch_metric_alarm" "low_tps" {
   evaluation_periods  = "3"
   metric_name         = "TPS"
   namespace           = "MinecraftServer/Performance"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "15"
-  alarm_description  = "Server TPS has dropped below acceptable levels"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "15"
+  alarm_description   = "Server TPS has dropped below acceptable levels"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   tags = local.cost_tags
 }
@@ -164,11 +164,11 @@ resource "aws_cloudwatch_metric_alarm" "high_mspt" {
   evaluation_periods  = "3"
   metric_name         = "MSPT"
   namespace           = "MinecraftServer/Performance"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "45"
-  alarm_description  = "Server tick processing time is too high"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "45"
+  alarm_description   = "Server tick processing time is too high"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   tags = local.cost_tags
 }
@@ -288,10 +288,10 @@ resource "aws_cloudwatch_dashboard" "player_analytics" {
             ["MinecraftServer", "AverageSessionDuration", "InstanceId", module.ec2_minecraft.id[0]],
             [".", "PeakConcurrentPlayers", ".", "."]
           ]
-          view    = "timeSeries"
-          region  = data.aws_region.current.name
-          title   = "Player Engagement"
-          period  = 3600
+          view   = "timeSeries"
+          region = data.aws_region.current.name
+          title  = "Player Engagement"
+          period = 3600
         }
       },
       {
@@ -302,23 +302,23 @@ resource "aws_cloudwatch_dashboard" "player_analytics" {
         height = 6
         properties = {
           metrics = [
-            ["MinecraftServer", "PlayerRetentionRate", "InstanceId", module.ec2_minecraft.id[0], { 
-              label: "Daily Retention",
-              period: 86400
+            ["MinecraftServer", "PlayerRetentionRate", "InstanceId", module.ec2_minecraft.id[0], {
+              label : "Daily Retention",
+              period : 86400
             }],
-            [".", ".", ".", ".", { 
-              label: "Weekly Retention",
-              period: 604800
+            [".", ".", ".", ".", {
+              label : "Weekly Retention",
+              period : 604800
             }]
           ]
-          view    = "timeSeries"
-          region  = data.aws_region.current.name
-          title   = "Player Retention"
-          yAxis: {
-            left: {
-              min: 0,
-              max: 100,
-              label: "Retention Rate (%)"
+          view   = "timeSeries"
+          region = data.aws_region.current.name
+          title  = "Player Retention"
+          yAxis : {
+            left : {
+              min : 0,
+              max : 100,
+              label : "Retention Rate (%)"
             }
           }
         }
@@ -345,14 +345,14 @@ resource "aws_cloudwatch_dashboard" "server_health" {
             ["MinecraftServer/Performance", "TPS", "InstanceId", module.ec2_minecraft.id[0]],
             [".", "MSPT", ".", "."]
           ]
-          view    = "timeSeries"
-          region  = data.aws_region.current.name
-          title   = "Server Performance"
-          period  = 60
-          yAxis   = {
-            left: {
-              min: 0,
-              max: 20
+          view   = "timeSeries"
+          region = data.aws_region.current.name
+          title  = "Server Performance"
+          period = 60
+          yAxis = {
+            left : {
+              min : 0,
+              max : 20
             }
           }
         }
@@ -368,14 +368,14 @@ resource "aws_cloudwatch_dashboard" "server_health" {
             ["MinecraftServer", "CPUUsage", "InstanceId", module.ec2_minecraft.id[0]],
             [".", "MemoryUsage", ".", "."]
           ]
-          view    = "timeSeries"
-          region  = data.aws_region.current.name
-          title   = "Resource Usage"
-          period  = 60
-          yAxis   = {
-            left: {
-              min: 0,
-              max: 100
+          view   = "timeSeries"
+          region = data.aws_region.current.name
+          title  = "Resource Usage"
+          period = 60
+          yAxis = {
+            left : {
+              min : 0,
+              max : 100
             }
           }
         }
@@ -391,10 +391,10 @@ resource "aws_cloudwatch_dashboard" "server_health" {
             ["MinecraftServer", "ChunkLoadTime", "InstanceId", module.ec2_minecraft.id[0]],
             [".", "WorldSize", ".", "."]
           ]
-          view    = "timeSeries"
-          region  = data.aws_region.current.name
-          title   = "World Metrics"
-          period  = 300
+          view   = "timeSeries"
+          region = data.aws_region.current.name
+          title  = "World Metrics"
+          period = 300
         }
       },
       {
@@ -424,11 +424,11 @@ resource "aws_cloudwatch_metric_alarm" "low_tps" {
   evaluation_periods  = "3"
   metric_name         = "TPS"
   namespace           = "MinecraftServer/Performance"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "15"
-  alarm_description  = "Server TPS has dropped below acceptable levels"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "15"
+  alarm_description   = "Server TPS has dropped below acceptable levels"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   tags = local.cost_tags
 }
@@ -440,11 +440,11 @@ resource "aws_cloudwatch_metric_alarm" "high_mspt" {
   evaluation_periods  = "3"
   metric_name         = "MSPT"
   namespace           = "MinecraftServer/Performance"
-  period             = "300"
-  statistic          = "Average"
-  threshold          = "45"
-  alarm_description  = "Server tick processing time is too high"
-  alarm_actions      = [aws_sns_topic.minecraft_alerts[0].arn]
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "45"
+  alarm_description   = "Server tick processing time is too high"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
 
   tags = local.cost_tags
 }
