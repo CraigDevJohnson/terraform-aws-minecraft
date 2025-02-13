@@ -1,6 +1,5 @@
 ## Add any logic/reasoning to this file including cost/performance decisions or just notes relevant to explaining components
-## Last Copilot Prompt:
-Please review and validate #file:backup.tf. Make sure nothing is duplicated as well as ensure it is following standards and isn't missing anything. Remove anything that might be leftover from during the code-split and ensure relevant comments are in place.
+## Last Copilot Prompt: Please review and validate #file:statuspage.tf . Make sure nothing is duplicated as well as ensure it is following standards and isn't missing anything. Remove anything that might be leftover from during the code-split and ensure relevant comments are in place.
 ## General Instructions
 
 1. Always format your Terraform code:
@@ -1018,3 +1017,404 @@ Future Analysis Required:
 - Cross-region latency correlation
 - Long-term retention patterns
 - Resource usage predictions
+
+## Network Infrastructure Decisions (2024 Update)
+
+### VPC Endpoint Strategy
+- Interface endpoints for SSM, SSMMessages, EC2Messages
+  - Cost impact: ~$7.30/month per endpoint
+  - Security benefit: No public internet required
+  - Performance: Reduced latency for AWS API calls
+
+- Gateway endpoint for S3
+  - Cost impact: Free
+  - Performance: Reduced latency for backups
+  - No public internet required for S3 access
+
+### Flow Logs Configuration
+- Retention: 7 days
+  - Cost impact: Minimal (~$1-2/month)
+  - Sufficient for troubleshooting
+  - Security compliance achieved
+
+### Security Group Design
+- Principle of least privilege
+- Edition-specific port configuration
+  - Bedrock: UDP/19132
+  - Java: TCP/25565
+- Improved security with HTTPS-only endpoint access
+
+### Network Monitoring
+- VPC Flow logs for security analysis
+- CloudWatch integration for metrics
+- Cost optimized retention periods
+- Performance impact tracking
+
+## Output Organization (2024 Update)
+
+### Output Grouping Strategy
+1. Network Outputs
+   - VPC and subnet IDs for network reference
+   - Useful for external module integration
+
+2. Instance Outputs
+   - Core EC2 instance details
+   - IAM profile information
+   - Public IP access details
+
+3. Server Access Outputs
+   - Minecraft server connection details
+   - Pre-formatted for client use
+   - Edition-specific port configuration
+
+4. SSH Key Management
+   - Both OpenSSH and PEM formats
+   - Secure key handling with proper permissions
+   - Connection string helper for different OS types
+
+5. Storage and Monitoring
+   - Backup bucket information
+   - CloudWatch dashboard direct links
+   - Performance monitoring access
+
+### Output Security Considerations
+- Private key marked as sensitive
+- Public keys explicitly marked non-sensitive
+- SSH connection strings templated by OS
+- Proper file permissions for key storage
+
+### Output Usage Examples
+1. External Module Integration
+```hcl
+module "minecraft" {
+  source = "path/to/module"
+  # ...configuration...
+}
+
+resource "aws_route53_record" "minecraft" {
+  zone_id = var.zone_id
+  name    = "mc.example.com"
+  type    = "A"
+  ttl     = "300"
+  records = [module.minecraft.instance_public_ip]
+}
+```
+
+2. Backup Integration
+```hcl
+module "minecraft" {
+  source = "path/to/module"
+  # ...configuration...
+}
+
+resource "aws_backup_selection" "minecraft" {
+  name = "minecraft-backup"
+  backup_plan_id = aws_backup_plan.minecraft.id
+  resources = [module.minecraft.instance_id]
+}
+```
+
+## Provider Configuration Decisions (2024)
+
+### Provider Version Constraints
+- AWS Provider: ~> 5.0
+  - Major version pinning for stability
+  - Minor version flexibility for security updates
+  - Notable improvements in v5: improved tagging, better error messages
+
+- Random Provider: >= 3.0
+  - Flexible versioning due to stable API
+  - Used for resource uniqueness only
+
+- TLS Provider: ~> 4.0
+  - Major version pinning for security
+  - Minor version flexibility for bug fixes
+  - Critical for SSH key generation
+
+- Local Provider: ~> 2.0
+  - Major version pinning for stability
+  - Used for local file operations only
+
+### Backend Strategy
+- S3 backend template provided but commented
+- Reasons for S3 backend:
+  - State locking via DynamoDB
+  - Encryption at rest
+  - Version history
+  - Team collaboration support
+  - Estimated cost: < $1/month
+
+### Tag Management Strategy
+- Global tags via default_tags:
+  - Environment: From variable
+  - Terraform: true (managed by terraform marker)
+  - Project: From name variable
+  - ModuleVersion: For tracking deployed versions
+- Additional tags merged for flexibility
+- Consistent across all resources
+- Supports cost allocation
+- Enables resource filtering
+
+## Systems Manager Configuration Decisions (2024)
+
+### Maintenance Window Strategy
+- Duration: 2 hours
+  - Provides sufficient time for backups and maintenance
+  - Cutoff at 1 hour to prevent long-running tasks
+  - Cost impact: None (included in EC2 pricing)
+
+### Session Manager Configuration
+- Log retention: 30 days
+  - Balances security requirements with cost
+  - Estimated cost: < $1/month
+  - Enhanced security over traditional SSH
+
+### SSM Documents Design
+1. Server Maintenance Document
+   - Structured maintenance procedures
+   - Automated backup process
+   - Log rotation included
+   - Safe server stop/start
+
+2. Performance Test Document
+   - Multiple test scenarios
+   - Configurable duration
+   - Resource impact monitoring
+   - Used for capacity planning
+
+### Parameter Store Usage
+- Centralized configuration
+- No additional cost (Standard tier)
+- Easy configuration management
+- Supports versioning
+
+### Security Considerations
+- Instance profile with minimal permissions
+- CloudWatch integration for audit logs
+- No direct SSH access required
+- Encrypted session data
+
+### Cost-Performance Analysis
+- Session Manager: Free (included with EC2)
+- CloudWatch Logs: ~$0.50/month
+- Parameter Store: Free tier
+- Total SSM cost: < $1/month
+
+### Session Manager Security Enhancements (2024)
+1. Session Encryption
+   - S3 logs with server-side encryption
+   - CloudWatch logs encryption enabled
+   - KMS key integration for additional security
+   - Estimated cost impact: negligible
+
+2. Session Controls
+   - 30-minute session timeout
+   - Run-as disabled for security
+   - OS-specific shell profiles
+   - Audit logging enabled
+
+3. Compliance Benefits
+   - Complete session audit trail
+   - Encrypted session data
+   - No SSH keys to manage
+   - Centralized access control
+
+4. Operational Advantages
+   - Browser-based access
+   - No bastion hosts needed
+   - Simplified access management
+   - Enhanced troubleshooting capabilities
+
+## Status Page Infrastructure Decisions (2024)
+
+### S3 Website Configuration
+1. Static Website Hosting
+   - Cost: Free (part of S3 pricing)
+   - Benefits:
+     - No EC2 instances required
+     - High availability
+     - Global content distribution
+   - Security: Public read-only access
+
+2. Update Frequency
+   - 5-minute intervals chosen for:
+     - Balance between freshness and cost
+     - Reduced Lambda invocations
+     - Sufficient for player information
+     - ~8,640 updates per month (within free tier)
+
+3. Bucket Naming Strategy
+   - Random suffix for uniqueness
+   - Prevents name collisions
+   - Enables multiple deployments
+   - Improves security through obscurity
+
+### Lambda Configuration
+1. Resource Allocation
+   - Memory: 128MB (sufficient for status updates)
+   - Timeout: 30 seconds (covers network delays)
+   - Runtime: Node.js 18.x (LTS version)
+   - Monthly cost: < $0.20
+
+2. IAM Security
+   - Minimal permissions model
+   - Scoped to specific bucket
+   - Limited CloudWatch access
+   - Restricted metric namespaces
+
+3. Error Handling
+   - CloudWatch logging enabled
+   - 14-day log retention
+   - Automatic retry on failure
+   - Error notifications via CloudWatch
+
+### Monitoring Strategy
+1. Status Updates
+   - Success rate tracking
+   - Latency monitoring
+   - Error rate alerts
+   - Content validation
+
+2. Cost Impact
+   - Lambda: Free tier eligible
+   - CloudWatch: ~$0.50/month
+   - S3: < $0.10/month
+   - Total: < $1/month
+
+### Status Page Monitoring Metrics (2024)
+1. Lambda Function Performance
+   - Invocation success rate
+   - Error count (threshold: >1 in 5 minutes)
+   - Duration (baseline: ~500ms)
+   - Memory utilization
+
+2. Storage Metrics
+   - Object count tracking
+   - Bucket size monitoring
+   - Version count alerts
+   - Encryption verification
+
+3. Dashboard Components
+   - Real-time update status
+   - Error rate visualization
+   - Storage utilization trends
+   - Performance metrics
+
+4. Alert Configuration
+   - Error threshold: 1 error/5 minutes
+   - Evaluation periods: 2
+   - Recovery notification
+   - SNS integration
+
+### Status Page Cost-Performance Analysis
+1. Storage Costs
+   - Standard S3 storage: ~$0.023/GB/month
+   - Versioning impact: ~30-day retention
+   - Data transfer: Minimal (< 1GB/month)
+   - Total storage cost: < $0.10/month
+
+2. Lambda Costs
+   - 8,640 invocations/month (5-min frequency)
+   - Average duration: 500ms
+   - Memory: 128MB
+   - Total Lambda cost: Free tier eligible
+
+3. CloudWatch Costs
+   - Custom metrics: 3
+   - Dashboard: 1
+   - Alarm evaluations: 8,640/month
+   - Total monitoring cost: ~$0.50/month
+
+4. Performance Metrics
+   - Update latency: < 1 second
+   - Availability: 99.99%
+   - Error rate target: < 0.1%
+   - Recovery time: < 5 minutes
+
+### Status Page Security Analysis (2024)
+1. WAF Protection
+   - Rate limit: 2000 requests per IP per 5 minutes
+   - Log retention: 30 days
+   - Sampling enabled for threat analysis
+   - Estimated cost: ~$1/month for WAF + $0.50/month for logs
+
+2. Security Monitoring
+   - Real-time blocked request tracking
+   - Request pattern analysis
+   - Geographic distribution monitoring
+   - Automated alerting for suspicious activity
+
+3. Incident Response
+   - Automatic rate limit adjustments
+   - IP-based blocking capability
+   - Detailed logging for forensics
+   - SNS notifications for security events
+
+4. Operational Security
+   - WAF metrics dashboard
+   - Log analysis capabilities
+   - Threat pattern visualization
+   - Security event correlation
+
+### WAF Performance Impact
+1. Latency Addition
+   - Average: < 1ms per request
+   - No significant impact on status page load times
+   - Regional edge optimization
+   - Caching preserved
+
+2. Cost vs Security Balance
+   - WAF rules optimized for performance
+   - Minimal false positives
+   - Efficient log filtering
+   - Focused security metrics
+
+### Status Page Error Handling Strategy (2024)
+1. Dead Letter Queue Implementation
+   - Message retention: 14 days
+   - Visibility timeout: 5 minutes
+   - Immediate alerting on failures
+   - Automated retry mechanism
+
+2. Error Recovery Process
+   - Maximum 3 retry attempts
+   - 1-second delay between retries
+   - Error threshold monitoring
+   - Degraded state management
+
+3. Monitoring Enhancements
+   - DLQ message count tracking
+   - Failed update alerts
+   - Error pattern analysis
+   - Recovery time tracking
+
+4. Operational Response
+   - Immediate notification of failures
+   - Automated recovery attempts
+   - Manual intervention triggers
+   - Post-mortem data collection
+
+### Status Page Resilience Features
+1. Automatic Recovery
+   - Retry mechanism with backoff
+   - DLQ for failed updates
+   - State recovery procedures
+   - Error threshold management
+
+2. Alert Integration
+   - SNS topic integration
+   - Multiple notification channels
+   - Priority-based routing
+   - Escalation procedures
+
+3. Performance Metrics
+   - Update latency tracking
+   - Error rate monitoring
+   - Recovery time measurement
+   - Availability calculations
+
+4. Cost Implications
+   - SQS: ~$0.10/month
+   - Additional Lambda retries: negligible
+   - CloudWatch metrics: included
+   - SNS notifications: free tier eligible

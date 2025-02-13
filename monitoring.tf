@@ -377,3 +377,185 @@ resource "aws_cloudwatch_metric_alarm" "network_out" {
 
   tags = module.label.tags
 }
+
+# Monitoring Configuration
+# --------------------------------------------
+
+locals {
+  monitoring_tags = merge(local.cost_tags, {
+    Service = "Monitoring"
+  })
+}
+
+#
+# CloudWatch Metrics Configuration
+#
+
+resource "aws_cloudwatch_log_group" "minecraft" {
+  count             = var.enable_monitoring ? 1 : 0
+  name              = "/aws/minecraft/${var.name}"
+  retention_in_days = var.log_retention_days
+  tags              = local.monitoring_tags
+}
+
+resource "aws_cloudwatch_metric_alarm" "cpu_utilization" {
+  count               = var.enable_monitoring ? 1 : 0
+  alarm_name          = "${var.name}-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = var.alert_thresholds.cpu_high
+  alarm_description   = "CPU utilization is too high"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
+
+  dimensions = {
+    InstanceId = module.ec2_minecraft.id[0]
+  }
+
+  tags = local.monitoring_tags
+}
+
+resource "aws_cloudwatch_metric_alarm" "memory_utilization" {
+  count               = var.enable_monitoring ? 1 : 0
+  alarm_name          = "${var.name}-memory-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "MemoryUtilization"
+  namespace           = "CWAgent"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = var.alert_thresholds.memory_high
+  alarm_description   = "Memory utilization is too high"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
+
+  dimensions = {
+    InstanceId = module.ec2_minecraft.id[0]
+  }
+
+  tags = local.monitoring_tags
+}
+
+resource "aws_cloudwatch_metric_alarm" "disk_usage" {
+  count               = var.enable_monitoring ? 1 : 0
+  alarm_name          = "${var.name}-disk-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "2"
+  metric_name         = "disk_used_percent"
+  namespace           = "CWAgent"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = 85
+  alarm_description   = "Disk usage is too high"
+  alarm_actions       = [aws_sns_topic.minecraft_alerts[0].arn]
+
+  dimensions = {
+    InstanceId = module.ec2_minecraft.id[0]
+    path       = "/opt/minecraft"
+    fstype     = "ext4"
+  }
+
+  tags = local.monitoring_tags
+}
+
+#
+# CloudWatch Dashboard
+#
+
+resource "aws_cloudwatch_dashboard" "minecraft" {
+  count          = var.enable_monitoring ? 1 : 0
+  dashboard_name = "${var.name}-monitoring"
+
+  dashboard_body = jsonencode({
+    widgets = [
+      {
+        type   = "metric"
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/EC2", "CPUUtilization", "InstanceId", module.ec2_minecraft.id[0]],
+            ["CWAgent", "MemoryUtilization", ".", "."],
+            [".", "disk_used_percent", ".", ".", "path", "/opt/minecraft"]
+          ]
+          view    = "timeSeries"
+          stacked = false
+          region  = data.aws_region.current.name
+          title   = "Server Resources"
+          period  = 300
+        }
+      },
+      {
+        type   = "metric"
+        x      = 12
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["MinecraftServer", "PlayerCount"],
+            [".", "TPS"],
+            [".", "MSPT"]
+          ]
+          view    = "timeSeries"
+          stacked = false
+          region  = data.aws_region.current.name
+          title   = "Server Performance"
+          period  = 60
+        }
+      },
+      {
+        type   = "metric"
+        x      = 0
+        y      = 6
+        width  = 24
+        height = 6
+        properties = {
+          metrics = [
+            ["AWS/EC2", "NetworkIn", "InstanceId", module.ec2_minecraft.id[0]],
+            [".", "NetworkOut", ".", "."]
+          ]
+          view    = "timeSeries"
+          stacked = true
+          region  = data.aws_region.current.name
+          title   = "Network Traffic"
+          period  = 300
+        }
+      }
+    ]
+  })
+}
+
+#
+# SNS Topics
+#
+
+resource "aws_sns_topic" "minecraft_alerts" {
+  count = var.enable_monitoring ? 1 : 0
+  name  = "${var.name}-alerts"
+  tags  = local.monitoring_tags
+}
+
+resource "aws_sns_topic" "minecraft_updates" {
+  count = var.enable_auto_updates ? 1 : 0
+  name  = "${var.name}-updates"
+  tags  = local.monitoring_tags
+}
+
+resource "aws_sns_topic_subscription" "alerts_email" {
+  count     = var.enable_monitoring && var.alert_email != "" ? 1 : 0
+  topic_arn = aws_sns_topic.minecraft_alerts[0].arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+
+resource "aws_sns_topic_subscription" "updates_email" {
+  count     = var.enable_auto_updates && var.update_notification_email != "" ? 1 : 0
+  topic_arn = aws_sns_topic.minecraft_updates[0].arn
+  protocol  = "email"
+  endpoint  = var.update_notification_email
+}

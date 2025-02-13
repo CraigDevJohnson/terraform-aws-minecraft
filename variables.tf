@@ -210,7 +210,7 @@ variable "notification_email" {
 }
 
 variable "enable_status_page" {
-  description = "Enable public status page"
+  description = "Whether to enable the status page feature. Creates an S3 bucket for hosting and Lambda function for updates."
   type        = bool
   default     = true
 }
@@ -402,18 +402,6 @@ variable "peak_hours" {
   }
 }
 
-variable "maintenance_window_schedule" {
-  description = "Cron expression for maintenance window"
-  type        = string
-  default     = "cron(0 0 ? * MON *)" // Monday at midnight
-}
-
-variable "maintenance_window_duration" {
-  description = "Duration in hours for maintenance window"
-  type        = number
-  default     = 2
-}
-
 variable "os_type" {
   description = "The operating system to use for the Minecraft server. Valid values are: amazon-linux-2, amazon-linux-2023, ubuntu"
   type        = string
@@ -429,6 +417,29 @@ variable "backup_retention_days" {
   description = "Number of days to retain backups"
   type        = number
   default     = 30
+}
+
+variable "enable_failover" {
+  description = "Enable DNS failover configuration"
+  type        = bool
+  default     = false
+}
+
+variable "secondary_ip" {
+  description = "IP address of secondary Minecraft server for failover"
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.secondary_ip == "" || can(regex("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$", var.secondary_ip))
+    error_message = "secondary_ip must be a valid IPv4 address or empty string"
+  }
+}
+
+variable "enable_latency_routing" {
+  description = "Enable Route53 latency-based routing"
+  type        = bool
+  default     = false
 }
 
 locals {
@@ -452,8 +463,116 @@ locals {
   }
 }
 
+# System Settings Variables
+# --------------------------------------------
+
+#
+# Maintenance Window Variables
+#
+
 variable "maintenance_schedule" {
-  description = "Cron expression for maintenance window schedule"
+  description = "Schedule expression for maintenance window (cron or rate)"
   type        = string
-  default     = "cron(0 0 * * ? *)" # Default: Run at midnight daily
+  default     = "cron(0 0 ? * MON *)"  # Every Monday at midnight UTC
+
+  validation {
+    condition     = can(regex("^cron\\([^)]+\\)$|^rate\\([^)]+\\)$", var.maintenance_schedule))
+    error_message = "maintenance_schedule must be a valid cron or rate expression"
+  }
+}
+
+variable "maintenance_duration" {
+  description = "Maximum duration for maintenance window in hours"
+  type        = number
+  default     = 2
+
+  validation {
+    condition     = var.maintenance_duration >= 1 && var.maintenance_duration <= 24
+    error_message = "Maintenance duration must be between 1 and 24 hours"
+  }
+}
+
+variable "maintenance_cutoff" {
+  description = "Number of hours before end of maintenance window to stop scheduling new tasks"
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.maintenance_cutoff >= 0
+    error_message = "Maintenance cutoff must be greater than or equal to 0"
+  }
+}
+
+variable "maintenance_timezone" {
+  description = "Timezone for maintenance window schedule (e.g., UTC, America/Los_Angeles)"
+  type        = string
+  default     = "UTC"
+}
+
+variable "maintenance_timeout" {
+  description = "Timeout in seconds for maintenance tasks"
+  type        = number
+  default     = 3600
+
+  validation {
+    condition     = var.maintenance_timeout >= 600 && var.maintenance_timeout <= 7200
+    error_message = "Maintenance timeout must be between 600 and 7200 seconds"
+  }
+}
+
+#
+# Logging and Retention Variables
+#
+
+variable "log_retention_days" {
+  description = "Number of days to retain CloudWatch logs"
+  type        = number
+  default     = 14
+
+  validation {
+    condition     = contains([1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653], var.log_retention_days)
+    error_message = "Log retention days must be one of: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653"
+  }
+}
+
+variable "waf_rate_limit" {
+  description = "Rate limit for WAF rules (requests per 5 minutes per IP)"
+  type        = number
+  default     = 2000
+}
+
+variable "waf_block_threshold" {
+  description = "Number of blocked requests before triggering an alert"
+  type        = number
+  default     = 100
+}
+
+variable "status_page_log_retention" {
+  description = "Number of days to retain WAF and Lambda logs"
+  type        = number
+  default     = 30
+}
+
+variable "status_dlq_retention_days" {
+  description = "Number of days to retain messages in the status page Dead Letter Queue"
+  type        = number
+  default     = 14
+}
+
+variable "status_max_retries" {
+  description = "Maximum number of retries for status page update attempts"
+  type        = number
+  default     = 3
+}
+
+variable "status_retry_delay_ms" {
+  description = "Delay in milliseconds between retry attempts for status updates"
+  type        = number
+  default     = 1000
+}
+
+variable "status_error_threshold" {
+  description = "Number of consecutive errors before marking status page as degraded"
+  type        = number
+  default     = 5
 }

@@ -13,6 +13,12 @@ echo "Packaging Lambda functions..."
 cd lambda/backup_validator && zip -r ../../backup_validator.zip . && cd ../..
 cd lambda/activity_predictor && zip -r ../../activity_predictor.zip . && cd ../..
 
+# Status Updater Lambda
+cd lambda/status_updater
+npm install --production
+zip -r ../../status_updater.zip ./*
+cd ../..
+
 # Validate terraform files
 echo "Validating Terraform configuration..."
 terraform fmt -check
