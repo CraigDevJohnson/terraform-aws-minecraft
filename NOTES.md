@@ -1,6 +1,6 @@
 ## Add any logic/reasoning to this file including cost/performance decisions or just notes relevant to explaining components
 ## Last Copilot Prompt:
-Please review and validate #file:ami.tf. Make sure nothing is duplicated as well as ensure it is following standards and isn't missing anything. Remove anything that might be leftover from during the code-split and ensure relevant comments are in place.
+Please review and validate #file:backup.tf. Make sure nothing is duplicated as well as ensure it is following standards and isn't missing anything. Remove anything that might be leftover from during the code-split and ensure relevant comments are in place.
 ## General Instructions
 
 1. Always format your Terraform code:
@@ -940,3 +940,81 @@ If the server grows beyond 5 players:
    - Complete pre-commit hook setup
    - Implement infrastructure testing
    - Enhance documentation
+
+## Analytics Infrastructure Updates (2024)
+
+### Player Analytics Optimization
+1. DynamoDB Configuration
+   - Time-to-live optimization set to 90 days
+   - Query patterns optimized for player ID + timestamp
+   - Cost impact: Minimal due to on-demand capacity
+
+2. Metric Organization
+   - Consolidated under MinecraftServer/Players namespace
+   - Standardized metric naming conventions
+   - Improved dashboard organization
+   - Enhanced metric retention configuration
+
+3. Activity Prediction Improvements
+   - Lambda memory optimization (256MB sufficient)
+   - Improved prediction accuracy with exponential smoothing
+   - Enhanced cost savings through smart shutdown
+   - Zero additional cost impact
+
+4. Monitoring Strategy
+   - Critical player metrics: 1-minute intervals
+   - Aggregate statistics: 5-minute intervals
+   - Retention metrics: Daily aggregation
+   - Cost optimized through metric filtering
+
+### Future Analytics Considerations
+1. Machine Learning Integration
+   - Consider SageMaker for advanced predictions
+   - Potential for improved cost savings
+   - Enhanced player experience
+   - Implementation cost: ~$20-30/month
+
+2. Advanced Analytics
+   - Player behavior patterns
+   - Resource usage correlation
+   - Performance impact analysis
+   - Implementation using existing infrastructure
+
+### Analytics Infrastructure Notes
+
+1. Resource Organization
+   - analytics.tf contains all analytics-related resources
+   - Proper separation of concerns maintained
+   - Clear resource dependencies
+   - Logical metric grouping
+
+2. Current Design Decisions
+   - DynamoDB chosen for time-series data
+   - CloudWatch metrics for real-time monitoring
+   - Lambda for serverless processing
+   - SNS for notifications
+   Rationale: Provides best balance of cost vs. performance for small to medium servers
+
+3. Cost-Performance Analysis
+   - DynamoDB: On-demand pricing (~$1-2/month)
+   - Lambda: Within free tier
+   - CloudWatch: ~$3/month with current metric volume
+   - Total analytics cost: ~$5/month
+
+4. Infrastructure Decisions
+   - Metric namespaces consolidated
+   - Resource tagging standardized
+   - Lambda memory optimized
+   - Permission boundaries implemented
+
+5. Known Limitations
+   - Player metrics limited to 90-day retention
+   - Activity prediction limited to daily patterns
+   - Basic retention analysis only
+   - No cross-region analytics
+
+Future Analysis Required:
+- Player geographic distribution impact
+- Cross-region latency correlation
+- Long-term retention patterns
+- Resource usage predictions

@@ -1,3 +1,16 @@
+# Variables validation
+locals {
+  analytics_validation_error = var.enable_monitoring && (
+    var.metric_retention_days == null ||
+    var.metric_retention_days < 1 ||
+    var.metric_retention_days > 365
+  ) ? "metric_retention_days must be between 1 and 365 when monitoring is enabled" : null
+}
+
+resource "null_resource" "analytics_validation" {
+  count = local.analytics_validation_error != null ? "Please fix: ${local.analytics_validation_error}" : 0
+}
+
 # DynamoDB table for player statistics
 resource "aws_dynamodb_table" "player_stats" {
   count        = var.enable_monitoring ? 1 : 0
@@ -26,6 +39,13 @@ resource "aws_dynamodb_table" "player_stats" {
   })
 }
 
+# SNS Topic for retention alerts
+resource "aws_sns_topic" "retention_alerts" {
+  count = var.enable_monitoring ? 1 : 0
+  name  = "${var.name}-retention-alerts"
+  tags  = local.cost_tags
+}
+
 # Lambda function for player analytics
 resource "aws_lambda_function" "player_analytics" {
   count         = var.enable_monitoring ? 1 : 0
@@ -36,10 +56,12 @@ resource "aws_lambda_function" "player_analytics" {
   runtime       = "nodejs18.x"
   timeout       = 60
   memory_size   = 256
+  description   = "Analyzes player activity and retention metrics for the Minecraft server"
 
   environment {
     variables = {
-      STATS_TABLE = aws_dynamodb_table.player_stats[0].name
+      STATS_TABLE      = aws_dynamodb_table.player_stats[0].name
+      ALERT_TOPIC_ARN  = aws_sns_topic.retention_alerts[0].arn
     }
   }
 
@@ -85,9 +107,17 @@ resource "aws_iam_role_policy" "player_analytics" {
       {
         Effect = "Allow"
         Action = [
-          "cloudwatch:PutMetricData"
+          "cloudwatch:PutMetricData",
+          "cloudwatch:GetMetricData"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:Publish"
+        ]
+        Resource = aws_sns_topic.retention_alerts[0].arn
       },
       {
         Effect = "Allow"
@@ -129,19 +159,47 @@ resource "aws_cloudwatch_dashboard" "player_analytics" {
       },
       {
         type   = "metric"
+        x      = 12
+        y      = 0
+        width  = 12
+        height = 6
+        properties = {
+          metrics = [
+            ["MinecraftServer/Players", "MonthlyPlaytime", "PlayerId", "*"],
+            [".", "MonthlySessions", ".", "*"]
+          ]
+          view    = "timeSeries"
+          stacked = false
+          region  = data.aws_region.current.name
+          title   = "Monthly Player Activity"
+          period  = 86400
+        }
+      },
+      {
+        type   = "metric"
         x      = 0
         y      = 6
         width  = 24
         height = 6
         properties = {
           metrics = [
-            ["MinecraftServer/PlayerStats", "MonthlySessions", "PlayerId", "*"]
+            ["MinecraftServer/Players", "RetentionRate", "CohortWeek", "week1"],
+            [".", ".", ".", "week2"],
+            [".", ".", ".", "week4"]
           ]
           view    = "timeSeries"
           stacked = false
           region  = data.aws_region.current.name
-          title   = "Monthly Sessions by Player"
-          period  = 86400
+          title   = "Player Retention Rates"
+          period  = 604800
+          stat    = "Average"
+          yAxis = {
+            left = {
+              min = 0
+              max = 100
+              label = "Retention Rate (%)"
+            }
+          }
         }
       }
     ]
@@ -178,6 +236,7 @@ resource "aws_lambda_function" "activity_predictor" {
   runtime       = "nodejs18.x"
   timeout       = 300
   memory_size   = 256
+  description   = "Predicts peak activity hours and manages server scheduling"
 
   environment {
     variables = {
@@ -190,16 +249,32 @@ resource "aws_lambda_function" "activity_predictor" {
   tags = local.cost_tags
 }
 
+# Allow CloudWatch Events to invoke activity predictor
+resource "aws_lambda_permission" "allow_cloudwatch" {
+  count         = var.enable_monitoring ? 1 : 0
+  statement_id  = "AllowCloudWatchInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.activity_predictor[0].function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.activity_prediction[0].arn
+}
+
 # Store prediction configuration
 resource "aws_s3_object" "default_peak_hours" {
-  count  = var.enable_monitoring ? 1 : 0
-  bucket = local.bucket
-  key    = "config/default_peak_hours.json"
-  content = jsonencode({
+  count         = var.enable_monitoring ? 1 : 0
+  bucket        = local.bucket
+  key           = "config/default_peak_hours.json"
+  content       = jsonencode({
     peakHours   = var.peak_hours,
     lastUpdated = timestamp()
   })
-  content_type = "application/json"
+  content_type  = "application/json"
+
+  lifecycle {
+    ignore_changes = [
+      content # Ignore changes to content as it's managed by the activity predictor
+    ]
+  }
 }
 
 # IAM role for activity predictor
@@ -254,6 +329,27 @@ resource "aws_iam_role_policy" "activity_predictor" {
           "logs:PutLogEvents"
         ]
         Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = "${local.bucket}/config/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeInstances",
+          "ec2:StopInstances"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:ResourceTag/Name" = "${var.name}"
+          }
+        }
       }
     ]
   })
